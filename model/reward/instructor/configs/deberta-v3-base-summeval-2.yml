@@ -11,6 +11,6 @@ save_steps: 500
 max_length: 1024
 num_train_epochs: 3
 summeval_path: /home/grzegorz.jurdzinski/datasets/summeval_reward_modeling/relevance_dataset.hf
-output_dir: /home/grzegorz.jurdzinski/models/deberta-v3-base-summeval
+output_dir: /home/grzegorz.jurdzinski/models/deberta-v3-base-summeval-2
 datasets:
   - summeval_local

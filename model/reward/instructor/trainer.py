@@ -1,4 +1,3 @@
-import os
 from argparse import ArgumentParser
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -22,8 +21,6 @@ from utils import (
     get_tokenizer,
 )
 
-os.environ["WANDB_PROJECT"] = "reward-model"
-
 accuracy = evaluate.load("accuracy")
 parser = ArgumentParser()
 # Note, these override the config yaml, and get merged in argument_parsing() in utils.py
@@ -32,7 +29,6 @@ parser.add_argument("config", type=str)
 parser.add_argument("--local_rank", type=int)
 parser.add_argument("--deepspeed", action="store_true")
 parser.add_argument("--no-deepspeed", dest="deepspeed", action="store_false")
-parser.add_argument("--wandb-entity", type=str)
 parser.add_argument("--per-digit-tokens", action="store_true")
 parser.add_argument("--output_dir", type=str)
 
@@ -207,7 +203,8 @@ if __name__ == "__main__":
         evaluation_strategy="steps",
         eval_steps=training_conf["eval_steps"],
         save_steps=training_conf["save_steps"],
-        report_to="wandb",
+        report_to="tensorboard",
+        # auto_find_batch_size=True,
     )
 
     tokenizer = get_tokenizer(
@@ -233,15 +230,6 @@ if __name__ == "__main__":
             drop_token_type=training_conf.get("drop_token_type", False),
         )
     assert len(evals) > 0
-
-    if not training_conf["deepspeed"] or training_conf["local_rank"] == 0:
-        import wandb
-
-        wandb.init(
-            project=os.environ["WANDB_PROJECT"],
-            name=f"{model_name}-finetuned",
-            entity=training_conf["wandb_entity"],
-        )
 
     trainer = RankTrainer(
         model=model,
