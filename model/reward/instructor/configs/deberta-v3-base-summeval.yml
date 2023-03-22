@@ -11,3 +11,4 @@ max_length: 512
 num_train_epochs: 2
 datasets:
   - summeval
+summeval_path: ~/datasets/summeval_reward_modeling/relevance_dataset.hf

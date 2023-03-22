@@ -176,7 +176,7 @@ def get_datasets(dataset_list: List[AnyStr], tokenizer, summeval_path=None):
             eval = OAPrivate(split="val", sep_token=tokenizer.sep_token)
             train_datasets.append(train)
             evals["oa_private"] = eval
-        elif "summeval_local" == dataset_name:
+        elif "summeval_local" == dataset_name and summeval_path is not None:
             train = SummevalDataset(dataset_path=summeval_path, split="train")
             train_datasets.append(train)
             eval = HFSummary(split="validation")
