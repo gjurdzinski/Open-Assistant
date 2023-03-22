@@ -24,9 +24,12 @@ from typing import Dict, List, Optional, Union
 
 import numpy as np
 import torch
-from datasets import load_dataset
+from datasets import load_dataset, DatasetDict
 from torch.utils.data import Dataset
-from transformers.tokenization_utils_base import PaddingStrategy, PreTrainedTokenizerBase
+from transformers.tokenization_utils_base import (
+    PaddingStrategy,
+    PreTrainedTokenizerBase,
+)
 
 
 @dataclass
@@ -47,15 +50,31 @@ class RankGenCollator:
                 worse_answers.append("suffi " + neg)
 
         tokenized_prefixes = self.tokenizer(
-            prefixes, return_tensors="pt", padding=self.padding, max_length=self.max_length, truncation=True
+            prefixes,
+            return_tensors="pt",
+            padding=self.padding,
+            max_length=self.max_length,
+            truncation=True,
         )
         tokenized_pos = self.tokenizer(
-            better_answers, return_tensors="pt", padding=self.padding, max_length=self.max_length, truncation=True
+            better_answers,
+            return_tensors="pt",
+            padding=self.padding,
+            max_length=self.max_length,
+            truncation=True,
         )
         tokenized_neg = self.tokenizer(
-            worse_answers, return_tensors="pt", padding=self.padding, max_length=self.max_length, truncation=True
+            worse_answers,
+            return_tensors="pt",
+            padding=self.padding,
+            max_length=self.max_length,
+            truncation=True,
         )
-        return {"prefix": tokenized_prefixes, "positive": tokenized_pos, "negative": tokenized_neg}
+        return {
+            "prefix": tokenized_prefixes,
+            "positive": tokenized_pos,
+            "negative": tokenized_neg,
+        }
 
 
 @dataclass
@@ -76,8 +95,22 @@ class DataCollatorForPairRank:
         flatten_features = []
         for question, pairs in features:
             for pos, neg in pairs:
-                flatten_features.append(self.tokenizer(question, pos, truncation=True, max_length=self.max_length))
-                flatten_features.append(self.tokenizer(question, neg, truncation=True, max_length=self.max_length))
+                flatten_features.append(
+                    self.tokenizer(
+                        question,
+                        pos,
+                        truncation=True,
+                        max_length=self.max_length,
+                    )
+                )
+                flatten_features.append(
+                    self.tokenizer(
+                        question,
+                        neg,
+                        truncation=True,
+                        max_length=self.max_length,
+                    )
+                )
         batch = self.tokenizer.pad(
             flatten_features,
             padding=self.padding,
@@ -125,42 +158,25 @@ class WebGPT(Dataset):
         return question, rows
 
 
-class HFSummary(Dataset):
+class SummevalDataset(Dataset):
     """
-    Human feedback data from OpenAI
-    https://github.com/openai/summarize-from-feedback
-
     labeling method : pair comparison, 0 or 1
-
     """
 
-    def __init__(self, split="train", conf_threshold=-1, max_comparison_per_sample=1) -> None:
+    def __init__(
+        self, dataset_path, split="train", max_comparison_per_sample=1
+    ) -> None:
         super().__init__()
-        assert split in ("train", "valid1", "valid2", "test")
+        assert split in ("train", "validation")
         summaries = {}
         # using prompt as our index will allows us
         # to add additional generated prompt later
         self.index2summary = {}
         self.max_comparison_per_sample = max_comparison_per_sample
         major_split = split if "train" == split else "validation"
-        dataset = load_dataset("openai/summarize_from_feedback", "comparisons")[major_split]
+        dataset = DatasetDict.load_from_disk(dataset_path)[major_split]
         for data in dataset:
-            if (
-                "extra" in data
-                and "confidence" in data["extra"]
-                and data["extra"]["confidence"] is not None
-                and conf_threshold > data["extra"]["confidence"]
-            ):
-                print("skipping {}".format(data["info"]["id"]))
-                continue
-
-            if split != "train" and split != data["split"]:
-                continue
-
-            if "article" in data["info"] and data["info"]["article"] is not None:
-                context = data["info"]["article"]
-            elif "post" in data["info"]:
-                context = data["info"]["post"]
+            context = data["article"]
 
             if context not in self.index2summary:
                 self.index2summary[len(self.index2summary)] = context
@@ -168,8 +184,17 @@ class HFSummary(Dataset):
             if context not in summaries:
                 summaries[context] = []
 
-            pos, neg = (0, 1) if data["choice"] == 0 else (1, 0)
-            summaries[context].append((data["summaries"][pos]["text"], data["summaries"][neg]["text"]))
+            pos, neg = (
+                ("first_summary", "second_summary")
+                if data["choice"] == 0
+                else ("second_summary", "first_summary")
+            )
+            summaries[context].append(
+                (
+                    data[pos],
+                    data[neg],
+                )
+            )
 
         self.summaries = summaries
 
@@ -187,7 +212,88 @@ class HFSummary(Dataset):
         # not optimal but good for now
         valid_idx = np.random.choice(len(rows), self.max_comparison_per_sample)
         # optimize the format later
-        return context + self.postfix_prompt, [r for idx, r in enumerate(rows) if idx in valid_idx]
+        return context + self.postfix_prompt, [
+            r for idx, r in enumerate(rows) if idx in valid_idx
+        ]
+
+
+class HFSummary(Dataset):
+    """
+    Human feedback data from OpenAI
+    https://github.com/openai/summarize-from-feedback
+
+    labeling method : pair comparison, 0 or 1
+
+    """
+
+    def __init__(
+        self, split="train", conf_threshold=-1, max_comparison_per_sample=1
+    ) -> None:
+        super().__init__()
+        assert split in ("train", "valid1", "valid2", "test")
+        summaries = {}
+        # using prompt as our index will allows us
+        # to add additional generated prompt later
+        self.index2summary = {}
+        self.max_comparison_per_sample = max_comparison_per_sample
+        major_split = split if "train" == split else "validation"
+        dataset = load_dataset(
+            "openai/summarize_from_feedback", "comparisons"
+        )[major_split]
+        for data in dataset:
+            if (
+                "extra" in data
+                and "confidence" in data["extra"]
+                and data["extra"]["confidence"] is not None
+                and conf_threshold > data["extra"]["confidence"]
+            ):
+                print("skipping {}".format(data["info"]["id"]))
+                continue
+
+            if split != "train" and split != data["split"]:
+                continue
+
+            if (
+                "article" in data["info"]
+                and data["info"]["article"] is not None
+            ):
+                context = data["info"]["article"]
+            elif "post" in data["info"]:
+                context = data["info"]["post"]
+
+            if context not in self.index2summary:
+                self.index2summary[len(self.index2summary)] = context
+
+            if context not in summaries:
+                summaries[context] = []
+
+            pos, neg = (0, 1) if data["choice"] == 0 else (1, 0)
+            summaries[context].append(
+                (
+                    data["summaries"][pos]["text"],
+                    data["summaries"][neg]["text"],
+                )
+            )
+
+        self.summaries = summaries
+
+        self.postfix_prompt = " TLDR;"
+
+    def __len__(self):
+        return len(self.index2summary)
+
+    def __getitem__(self, index):
+        context = self.index2summary[index]
+        # return pairs of comparison
+        rows = self.summaries[context]
+        # pair very big
+        # we are going to do some sampling
+        # not optimal but good for now
+        valid_idx = np.random.choice(len(rows), self.max_comparison_per_sample)
+        # optimize the format later
+        return context + self.postfix_prompt, [
+            r for idx, r in enumerate(rows) if idx in valid_idx
+        ]
 
 
 class HFDataset(Dataset):
@@ -199,7 +305,13 @@ class HFDataset(Dataset):
     """
 
     def __init__(
-        self, dataset_name, question_field, pos_answer_field, neg_answer_field, subset=None, split=None
+        self,
+        dataset_name,
+        question_field,
+        pos_answer_field,
+        neg_answer_field,
+        subset=None,
+        split=None,
     ) -> None:
         super().__init__()
         dataset = load_dataset(dataset_name, subset)
@@ -231,7 +343,14 @@ class HFDataset(Dataset):
 
 class GPTJSynthetic(HFDataset):
     def __init__(self) -> None:
-        super().__init__("Dahoas/synthetic-instruct-gptj-pairwise", "prompt", "chosen", "rejected", None, "train")
+        super().__init__(
+            "Dahoas/synthetic-instruct-gptj-pairwise",
+            "prompt",
+            "chosen",
+            "rejected",
+            None,
+            "train",
+        )
 
 
 class AnthropicRLHF(Dataset):
@@ -278,13 +397,23 @@ class AnthropicRLHF(Dataset):
                 continue
             prompt, pos_postfix = processed.split("Assistant:", maxsplit=1)
             prompt = prompt.replace("Human: ", "").strip()
-            pos_postfix = pos_postfix.replace("Human: ", sep_token).replace("\n\nAssistant: ", sep_token).strip()
+            pos_postfix = (
+                pos_postfix.replace("Human: ", sep_token)
+                .replace("\n\nAssistant: ", sep_token)
+                .strip()
+            )
             processed = self.preprocess_dialogue(data["rejected"])
             if "Assistant" not in processed:
                 continue
             _, neg_postfix = processed.split("Assistant:", maxsplit=1)
-            neg_postfix = neg_postfix.replace("Human: ", sep_token).replace("\n\nAssistant: ", sep_token).strip()
-            self.pairs.append((prompt, (pos_postfix.strip(), neg_postfix.strip())))
+            neg_postfix = (
+                neg_postfix.replace("Human: ", sep_token)
+                .replace("\n\nAssistant: ", sep_token)
+                .strip()
+            )
+            self.pairs.append(
+                (prompt, (pos_postfix.strip(), neg_postfix.strip()))
+            )
 
     def __len__(self):
         return len(self.pairs)
@@ -311,7 +440,9 @@ class OAPrivate(Dataset):
         "val": "rm_val.jsonl",
     }
 
-    def __init__(self, split="train", sep_token="<sep>", data_path=".cache") -> None:
+    def __init__(
+        self, split="train", sep_token="<sep>", data_path=".cache"
+    ) -> None:
         super().__init__()
         import json
 
@@ -320,7 +451,9 @@ class OAPrivate(Dataset):
         with open(jsonl_file, "r", encoding="utf-8") as f:
             for line in f:
                 data = json.loads(line)
-                prefix = sep_token.join([sep_token.join(p) for p in data["history"][-2:]])
+                prefix = sep_token.join(
+                    [sep_token.join(p) for p in data["history"][-2:]]
+                )
                 prefix += sep_token + data["prompt"]
                 pair = []
                 for neg_text in data["neg_replies"]:
