@@ -179,7 +179,9 @@ def get_datasets(dataset_list: List[AnyStr], tokenizer, summeval_path=None):
         elif "summeval_local" == dataset_name and summeval_path is not None:
             train = SummevalDataset(dataset_path=summeval_path, split="train")
             train_datasets.append(train)
-            eval = HFSummary(split="validation")
+            eval = SummevalDataset(
+                dataset_path=summeval_path, split="validation"
+            )
             evals["summeval_local"] = eval
             pass
 
