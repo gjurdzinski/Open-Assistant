@@ -10,5 +10,4 @@ save_steps: 500
 max_length: 512
 num_train_epochs: 2
 datasets:
-  - webgpt
-  - hfsummary
+  - summeval
