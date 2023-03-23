@@ -103,12 +103,14 @@ def argument_parsing(parser):
         "gradient_checkpointing": False,
         "deepspeed": False,
         "local_rank": -1,
-        "datasets": ["webgpt"],
-        "wandb_entity": "open-assistant",
+        "datasets": ["summeval_local"],
+        "wandb_entity": "gpt-novel",
         "per_digit_tokens": False,
         "fp16": True,
         "tokenizer_name": training_conf["model_name"],
         "output_dir": "output",
+        "auto_find_batch_size": False,
+        "report_to": [],
     }
     args_without_none = {
         k: v for (k, v) in vars(args).items() if v is not None

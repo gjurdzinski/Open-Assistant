@@ -1,4 +1,4 @@
-model_name: microsoft/deberta-v3-base
+model_name: OpenAssistant/reward-model-deberta-v3-base
 learning_rate: 1e-5
 scheduler: cosine
 gradient_checkpointing: false
@@ -15,6 +15,6 @@ report_to:
   - tensorboard
 auto_find_batch_size: true
 summeval_path: /home/grzegorz.jurdzinski/datasets/summeval_reward_modeling/relevance_dataset.hf
-output_dir: /home/grzegorz.jurdzinski/models/summeval/relevance/deberta-v3-base-summeval
+output_dir: /home/grzegorz.jurdzinski/models/summeval/relevance/reward-model-deberta-v3-base
 datasets:
   - summeval_local

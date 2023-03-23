@@ -1,9 +1,10 @@
-from argparse import ArgumentParser
-from typing import Any, Dict, List, Optional, Tuple, Union
-
 import evaluate
 import numpy as np
 import torch
+import os
+
+from argparse import ArgumentParser
+from typing import Any, Dict, List, Optional, Tuple, Union
 from models import RankGenModel
 from rank_datasets import DataCollatorForPairRank, RankGenCollator
 from torch import nn
@@ -22,6 +23,8 @@ from utils import (
 )
 from pathlib import Path
 
+os.environ["WANDB_PROJECT"] = "reward-model"
+
 accuracy = evaluate.load("accuracy")
 parser = ArgumentParser()
 # Note, these override the config yaml, and get merged in argument_parsing() in utils.py
@@ -30,6 +33,7 @@ parser.add_argument("config", type=str)
 parser.add_argument("--local_rank", type=int)
 parser.add_argument("--deepspeed", action="store_true")
 parser.add_argument("--no-deepspeed", dest="deepspeed", action="store_false")
+parser.add_argument("--wandb-entity", type=str)
 parser.add_argument("--per-digit-tokens", action="store_true")
 parser.add_argument("--output_dir", type=str)
 
@@ -205,7 +209,7 @@ if __name__ == "__main__":
         eval_steps=training_conf["eval_steps"],
         save_steps=training_conf["save_steps"],
         report_to="tensorboard",
-        auto_find_batch_size=True,
+        auto_find_batch_size=training_conf["auto_find_batch_size"],
         load_best_model_at_end=True,
     )
 
@@ -232,6 +236,17 @@ if __name__ == "__main__":
             drop_token_type=training_conf.get("drop_token_type", False),
         )
     assert len(evals) > 0
+
+    if not training_conf["deepspeed"] or training_conf["local_rank"] == 0:
+        import wandb
+
+        wandb.init(
+            project=os.environ["WANDB_PROJECT"],
+            name=f"{model_name}-finetuned",
+            # I was getting errors when using the argument below and it seems
+            # to be working fine without it.
+            # entity=training_conf["wandb_entity"],
+        )
 
     trainer = RankTrainer(
         model=model,
