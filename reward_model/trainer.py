@@ -263,4 +263,4 @@ if __name__ == "__main__":
     trainer.train()
     trainer.evaluate()
 
-    trainer.save_mode(Path(training_conf["output_dir"]) / "checkpoint-best")
+    trainer.save_model(Path(training_conf["output_dir"]) / "checkpoint-best")
