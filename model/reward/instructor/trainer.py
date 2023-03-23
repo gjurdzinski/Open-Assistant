@@ -20,6 +20,7 @@ from utils import (
     get_datasets,
     get_tokenizer,
 )
+from pathlib import Path
 
 accuracy = evaluate.load("accuracy")
 parser = ArgumentParser()
@@ -204,7 +205,8 @@ if __name__ == "__main__":
         eval_steps=training_conf["eval_steps"],
         save_steps=training_conf["save_steps"],
         report_to="tensorboard",
-        # auto_find_batch_size=True,
+        auto_find_batch_size=True,
+        load_best_model_at_end=True,
     )
 
     tokenizer = get_tokenizer(
@@ -245,3 +247,5 @@ if __name__ == "__main__":
     )
     trainer.train()
     trainer.evaluate()
+
+    trainer.save_mode(Path(training_conf["output_dir"]) / "checkpoint-best")
