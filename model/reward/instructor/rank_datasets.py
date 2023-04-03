@@ -157,6 +157,61 @@ class WebGPT(Dataset):
         # optimize the format later
         return question, rows
 
+class NewsroomDataset(Dataset):
+    def __init__(
+        self, dataset_path, split="train", max_comparison_per_sample=1
+    ) -> None:
+        super().__init__()
+        assert split in ("train", "validation")
+        summaries = {}
+        # using prompt as our index will allows us
+        # to add additional generated prompt later
+        self.index2summary = {}
+        self.max_comparison_per_sample = max_comparison_per_sample
+        major_split = split if "train" == split else "validation"
+        dataset = DatasetDict.load_from_disk(dataset_path)[major_split]
+        for data in dataset:
+            context = data["article"]
+
+            if context not in self.index2summary:
+                self.index2summary[len(self.index2summary)] = context
+
+            if context not in summaries:
+                summaries[context] = []
+
+            pos, neg = (
+                ("first_summary", "second_summary")
+                if data["choice"] == 0
+                else ("second_summary", "first_summary")
+            )
+            summaries[context].append(
+                (
+                    data[pos],
+                    data[neg],
+                )
+            )
+
+        self.summaries = summaries
+
+        self.postfix_prompt = " TLDR; "
+
+    def __len__(self):
+        return len(self.index2summary)
+
+    def __getitem__(self, index):
+        context = self.index2summary[index]
+        # return pairs of comparison
+        rows = self.summaries[context]
+        # pair very big
+        # we are going to do some sampling
+        # not optimal but good for now
+        valid_idx = np.random.choice(len(rows), self.max_comparison_per_sample)
+        # optimize the format later
+        return context + self.postfix_prompt, [
+            r for idx, r in enumerate(rows) if idx in valid_idx
+        ]
+
+
 
 class SummevalDataset(Dataset):
     """

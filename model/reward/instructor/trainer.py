@@ -200,13 +200,15 @@ if __name__ == "__main__":
         weight_decay=training_conf["weight_decay"],
         max_grad_norm=training_conf["max_grad_norm"],
         logging_steps=10,
-        save_total_limit=4,
+        save_total_limit=2,
         evaluation_strategy="steps",
         eval_steps=training_conf["eval_steps"],
         save_steps=training_conf["save_steps"],
-        report_to="tensorboard",
-        auto_find_batch_size=True,
+        # auto_find_batch_size=True,
         load_best_model_at_end=True,
+        report_to="wandb",
+        overwrite_output_dir=True,
+        metric_for_best_model="accuracy",
     )
 
     tokenizer = get_tokenizer(
@@ -233,6 +235,13 @@ if __name__ == "__main__":
         )
     assert len(evals) > 0
 
+    if not training_conf["deepspeed"] or training_conf["local_rank"] == 0:
+        import wandb
+
+        wandb.init(
+            project="gpt-novel-2",
+        )
+
     trainer = RankTrainer(
         model=model,
         model_name=model_name,
@@ -245,7 +254,15 @@ if __name__ == "__main__":
         compute_metrics=compute_metrics,
         # optimizers=(optimizer, scheduler),
     )
+
+    # evaluate at step zero:
+    trainer.evaluate()
+
     trainer.train()
     trainer.evaluate()
 
-    trainer.save_mode(Path(training_conf["output_dir"]) / "checkpoint-best")
+    # save the best model:
+    trainer.save_model(Path(training_conf["output_dir"]) / "checkpoint-best")
+
+    # save predictions on eval split:
+    ...

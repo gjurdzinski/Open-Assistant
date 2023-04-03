@@ -145,6 +145,7 @@ def get_datasets(dataset_list: List[AnyStr], tokenizer, summeval_path=None):
         OAPrivate,
         WebGPT,
         SummevalDataset,
+        NewsroomDataset,
     )
     from torch.utils.data import ConcatDataset
 
@@ -183,7 +184,15 @@ def get_datasets(dataset_list: List[AnyStr], tokenizer, summeval_path=None):
                 dataset_path=summeval_path, split="validation"
             )
             evals["summeval_local"] = eval
-            pass
+        elif "newsroom_local" == dataset_name and summeval_path is not None:
+            train = NewsroomDataset(dataset_path=summeval_path, split="train")
+            print(" >>>> read data from:", summeval_path)
+            train_datasets.append(train)
+            eval = NewsroomDataset(
+                dataset_path=summeval_path, split="validation"
+            )
+            evals["newsroom_local"] = eval
+
 
     train = ConcatDataset(train_datasets)
     return train, evals
