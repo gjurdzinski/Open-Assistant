@@ -159,39 +159,42 @@ class WebGPT(Dataset):
 
 class NewsroomDataset(Dataset):
     def __init__(
-        self, dataset_path, split="train", max_comparison_per_sample=1
+        self, dataset_path, splits=["train"], max_comparison_per_sample=1
     ) -> None:
         super().__init__()
-        assert split in ("train", "validation")
-        summaries = {}
+        # assert split in ("train", "validation")
+        self.summaries = {}
         # using prompt as our index will allows us
         # to add additional generated prompt later
         self.index2summary = {}
         self.max_comparison_per_sample = max_comparison_per_sample
-        major_split = split if "train" == split else "validation"
-        dataset = DatasetDict.load_from_disk(dataset_path)[major_split]
-        for data in dataset:
-            context = data["article"]
+        # major_split = split if "train" == split else "validation"
+        dataset_dict = DatasetDict.load_from_disk(dataset_path)
+        for split in splits:
+            dataset = dataset_dict[split]
+            summaries = {}
+            for data in dataset:
+                context = data["article"]
 
-            if context not in self.index2summary:
-                self.index2summary[len(self.index2summary)] = context
+                if context not in self.index2summary:
+                    self.index2summary[len(self.index2summary)] = context
 
-            if context not in summaries:
-                summaries[context] = []
+                if context not in summaries:
+                    summaries[context] = []
 
-            pos, neg = (
-                ("first_summary", "second_summary")
-                if data["choice"] == 0
-                else ("second_summary", "first_summary")
-            )
-            summaries[context].append(
-                (
-                    data[pos],
-                    data[neg],
+                pos, neg = (
+                    ("first_summary", "second_summary")
+                    if data["choice"] == 0
+                    else ("second_summary", "first_summary")
                 )
-            )
+                summaries[context].append(
+                    (
+                        data[pos],
+                        data[neg],
+                    )
+                )
 
-        self.summaries = summaries
+            self.summaries = {**self.summaries, **summaries}
 
         self.postfix_prompt = " TLDR; "
 
@@ -219,39 +222,44 @@ class SummevalDataset(Dataset):
     """
 
     def __init__(
-        self, dataset_path, split="train", max_comparison_per_sample=1
+        self, dataset_path, splits=["train"], max_comparison_per_sample=1
     ) -> None:
         super().__init__()
-        assert split in ("train", "validation")
-        summaries = {}
+        # assert split in ("train", "validation")
+        self.summaries = {}
         # using prompt as our index will allows us
         # to add additional generated prompt later
         self.index2summary = {}
         self.max_comparison_per_sample = max_comparison_per_sample
-        major_split = split if "train" == split else "validation"
-        dataset = DatasetDict.load_from_disk(dataset_path)[major_split]
-        for data in dataset:
-            context = data["article"]
+        if type(split) == str:
+            splits = [splits]
+        # major_split = split if "train" == split else "validation"
+        dataset_dict = DatasetDict.load_from_disk(dataset_path)
+        for split in splits:
+            dataset = dataset_dict[split]
+            summaries = {}
+            for data in dataset:
+                context = data["article"]
 
-            if context not in self.index2summary:
-                self.index2summary[len(self.index2summary)] = context
+                if context not in self.index2summary:
+                    self.index2summary[len(self.index2summary)] = context
 
-            if context not in summaries:
-                summaries[context] = []
+                if context not in summaries:
+                    summaries[context] = []
 
-            pos, neg = (
-                ("first_summary", "second_summary")
-                if data["choice"] == 0
-                else ("second_summary", "first_summary")
-            )
-            summaries[context].append(
-                (
-                    data[pos],
-                    data[neg],
+                pos, neg = (
+                    ("first_summary", "second_summary")
+                    if data["choice"] == 0
+                    else ("second_summary", "first_summary")
                 )
-            )
+                summaries[context].append(
+                    (
+                        data[pos],
+                        data[neg],
+                    )
+                )
 
-        self.summaries = summaries
+            self.summaries = {**self.summaries, **summaries}
 
         self.postfix_prompt = " TLDR;"
 

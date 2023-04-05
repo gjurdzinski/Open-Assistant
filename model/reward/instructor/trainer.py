@@ -156,7 +156,8 @@ class RankTrainer(Trainer):
                 return loss, logits, labels
 
 
-if __name__ == "__main__":
+def train_procedure(training_conf, iteration):
+    """Train a model on a given set of train datasets."""
     training_conf = argument_parsing(parser)
 
     model_name = training_conf["model_name"]
@@ -177,7 +178,7 @@ if __name__ == "__main__":
 
     optimizer = OptimizerNames.ADAMW_HF
     args = TrainingArguments(
-        output_dir=training_conf["output_dir"],
+        output_dir=training_conf["output_dirs"][iteration],
         num_train_epochs=training_conf["num_train_epochs"],
         warmup_steps=training_conf["warmup_steps"],
         optim=optimizer,
@@ -222,6 +223,11 @@ if __name__ == "__main__":
             for key, value in training_conf.items()
             if key == "summeval_path"
         },
+        **{
+            "train_splits": value[iteration]
+            for key, value in training_conf.items()
+            if key == "train_splits"
+        }
     )
     if "rankgen" in model_name:
         collate_fn = RankGenCollator(
@@ -265,4 +271,13 @@ if __name__ == "__main__":
     trainer.save_model(Path(training_conf["output_dir"]) / "checkpoint-best")
 
     # save predictions on eval split:
+    # TODO: save predictions on test split
     ...
+
+
+if __name__ == "__main__":
+    training_conf = argument_parsing(parser)
+
+    assert len(training_conf["train_splits"]) == len(training_conf["output_dirs"])
+    for iteration in range(len(training_conf["train_splits"])):
+        train_procedure(training_conf, iteration)
