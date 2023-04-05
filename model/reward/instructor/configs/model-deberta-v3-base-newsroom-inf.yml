@@ -1,8 +1,8 @@
-model_name: microsoft/deberta-v3-small
+model_name: microsoft/deberta-v3-base
 learning_rate: 5e-5
 scheduler: cosine
 gradient_checkpointing: false
-gradient_accumulation_steps: 6
+gradient_accumulation_steps: 12
 per_device_train_batch_size: 1
 per_device_eval_batch_size: 3
 warmup_steps: 100
@@ -11,6 +11,6 @@ save_steps: 50
 max_length: 4096
 num_train_epochs: 3
 summeval_path: ./datasets/InformativenessRating_dataset/
-output_dir: ./models/inf_reward_model_deberta_v3_small/
+output_dir: ./models/inf-deberta-v3-base-4096-reward/
 datasets:
   - newsroom_local
