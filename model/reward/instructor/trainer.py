@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import evaluate
 import numpy as np
 import torch
+from datasets import load_dataset, DatasetDict
 from models import RankGenModel
 from rank_datasets import DataCollatorForPairRank, RankGenCollator
 from torch import nn
@@ -21,6 +22,9 @@ from utils import (
     get_tokenizer,
 )
 from pathlib import Path
+import glob
+import shutil
+import pandas as pd
 
 accuracy = evaluate.load("accuracy")
 parser = ArgumentParser()
@@ -156,6 +160,32 @@ class RankTrainer(Trainer):
                 return loss, logits, labels
 
 
+def predict(dataset_dict, model, tokenizer, batch_size):
+    texts = list(dataset_dict["valid"]["article"])
+    num_examples = len(texts)
+    num_batches = (num_examples + batch_size - 1) // batch_size
+    outputs_list = []
+    for i in range(num_batches):
+        start_idx = i * batch_size
+        end_idx = min((i + 1) * batch_size, num_examples)
+        batch = texts[start_idx:end_idx]
+
+        with torch.no_grad():
+            preds = model.forward(
+                tokenizer.batch_encode_plus(
+                    batch,
+                    return_tensors="pt",
+                    padding="longest",
+                    truncation=True,
+                )["input_ids"].to(torch.device("cuda")),
+            ).logits.reshape(-1).tolist()
+
+        outputs_list.append(preds)
+
+    outputs_list = [item for sublist in outputs_list for item in sublist]
+    print(outputs_list)
+    return outputs_list
+
 def train_procedure(training_conf, iteration):
     """Train a model on a given set of train datasets."""
     training_conf = argument_parsing(parser)
@@ -268,11 +298,20 @@ def train_procedure(training_conf, iteration):
     trainer.evaluate()
 
     # save the best model:
-    trainer.save_model(Path(training_conf["output_dir"]) / "checkpoint-best")
+    # trainer.save_model(Path(training_conf["output_dir"]) / "checkpoint-best")
+
+    # remove all checkpoints:
+    pattern = str(Path(training_conf["output_dir"]) / "checkpoint-*")
+    matching_dirs = glob.glob(pattern)
+    for dir_path in matching_dirs:
+        shutil.rmtree(dir_path)
 
     # save predictions on eval split:
-    # TODO: save predictions on test split
-    ...
+    dataset_dict = DatasetDict.load_from_disk(training_conf["summeval_path"])
+    valid_predictions = predict(dataset_dict, model, tokenizer, 4)
+    df = dataset_dict["valid"].to_pandas()
+    df["preds"] = pd.Series(valid_predictions)
+    df.to_json(Path(training_conf["output_dir"]) / "valid_predictions.json")
 
 
 if __name__ == "__main__":
