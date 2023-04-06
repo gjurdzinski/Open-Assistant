@@ -5,6 +5,7 @@ import evaluate
 import numpy as np
 import torch
 from datasets import load_dataset, DatasetDict
+from torch.utils.data import DataLoader
 from models import RankGenModel
 from rank_datasets import DataCollatorForPairRank, RankGenCollator
 from torch import nn
@@ -13,6 +14,8 @@ from transformers import (
     PreTrainedModel,
     Trainer,
     TrainingArguments,
+    AutoTokenizer
+
 )
 from transformers.training_args import OptimizerNames
 from utils import (
@@ -22,6 +25,7 @@ from utils import (
     get_tokenizer,
 )
 from pathlib import Path
+from tqdm import tqdm
 import glob
 import shutil
 import pandas as pd
@@ -37,6 +41,7 @@ parser.add_argument("--no-deepspeed", dest="deepspeed", action="store_false")
 parser.add_argument("--per-digit-tokens", action="store_true")
 parser.add_argument("--output_dir", type=str)
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def compute_metrics(eval_pred):
     predictions, _ = eval_pred
@@ -275,7 +280,9 @@ def train_procedure(training_conf, iteration):
         import wandb
 
         wandb.init(
-            project="gpt-novel-2",
+            project = "gpt-novel-multi",
+            name = f"shard_{iteration}",
+            group = training_conf["summeval_path"],
         )
 
     trainer = RankTrainer(
@@ -298,13 +305,50 @@ def train_procedure(training_conf, iteration):
     trainer.evaluate()
 
     # save the best model:
-    trainer.save_model(Path(training_conf["output_dir"]) / "checkpoint-best")
+    best_model_path = Path(training_conf["output_dir"]) / "checkpoint-best"
+    trainer.save_model(best_model_path)
+
+    print("final_inference...")
+
+    tokenizer = AutoTokenizer.from_pretrained(best_model_path)
+    model = AutoModelForSequenceClassification.from_pretrained(best_model_path).to(device)
+
+    def tokenize(batch):
+        return tokenizer(batch['deberta_input'], padding=True, truncation=True, max_length=4096)
+
+    dataset_dict = DatasetDict.load_from_disk(training_conf["summeval_path"])
+    valid_final_ds = dataset_dict['valid_final'] 
+
+    valid_final_encoded = valid_final_ds.map(tokenize, batched=True, batch_size=1)
+    valid_final_encoded.set_format(type='torch', columns=['input_ids', 'token_type_ids', 'attention_mask'])
+    valid_final_dataloader = DataLoader(valid_final_encoded, batch_size=1, shuffle=False)
+
+    outputs_buffer = []
+
+    for batch in tqdm(valid_final_dataloader):
+        inputs = {k:v.to(device) for k,v in batch.items()}
+        with torch.no_grad():
+            outputs = model(**inputs)
+
+        outputs_buffer.append(outputs.logits[:,0])
+
+    summary_scores = torch.cat(outputs_buffer, dim=0).cpu().numpy()
+
+    rewards_df = pd.DataFrame(
+        data = {
+            'ArticleID': valid_final_ds['ArticleID'],
+            'System': valid_final_ds['System'],
+            'deberta_reward': summary_scores,
+        }
+    )
+
+    rewards_df.to_csv(f"./rewards/rewards_{iteration}.csv", index=False)
 
     # remove all checkpoints:
-    # pattern = str(Path(training_conf["output_dir"]) / "checkpoint-*")
-    # matching_dirs = glob.glob(pattern)
-    # for dir_path in matching_dirs:
-    #     shutil.rmtree(dir_path)
+    pattern = str(Path(training_conf["output_dir"]) / "checkpoint-*")
+    matching_dirs = glob.glob(pattern)
+    for dir_path in matching_dirs:
+        shutil.rmtree(dir_path)
 
     # # save predictions on eval split:
     # dataset_dict = DatasetDict.load_from_disk(training_conf["summeval_path"])
