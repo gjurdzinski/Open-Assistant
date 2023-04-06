@@ -298,25 +298,26 @@ def train_procedure(training_conf, iteration):
     trainer.evaluate()
 
     # save the best model:
-    # trainer.save_model(Path(training_conf["output_dir"]) / "checkpoint-best")
+    trainer.save_model(Path(training_conf["output_dir"]) / "checkpoint-best")
 
     # remove all checkpoints:
-    pattern = str(Path(training_conf["output_dir"]) / "checkpoint-*")
-    matching_dirs = glob.glob(pattern)
-    for dir_path in matching_dirs:
-        shutil.rmtree(dir_path)
+    # pattern = str(Path(training_conf["output_dir"]) / "checkpoint-*")
+    # matching_dirs = glob.glob(pattern)
+    # for dir_path in matching_dirs:
+    #     shutil.rmtree(dir_path)
 
-    # save predictions on eval split:
-    dataset_dict = DatasetDict.load_from_disk(training_conf["summeval_path"])
-    valid_predictions = predict(dataset_dict, model, tokenizer, 4)
-    df = dataset_dict["valid"].to_pandas()
-    df["preds"] = pd.Series(valid_predictions)
-    df.to_json(Path(training_conf["output_dir"]) / "valid_predictions.json")
+    # # save predictions on eval split:
+    # dataset_dict = DatasetDict.load_from_disk(training_conf["summeval_path"])
+    # valid_predictions = predict(dataset_dict, model, tokenizer, 4)
+    # df = dataset_dict["valid"].to_pandas()
+    # df["preds"] = pd.Series(valid_predictions)
+    # df.to_json(Path(training_conf["output_dir"]) / "valid_predictions.json")
 
 
 if __name__ == "__main__":
     training_conf = argument_parsing(parser)
 
     assert len(training_conf["train_splits"]) == len(training_conf["output_dirs"])
-    for iteration in range(len(training_conf["train_splits"])):
+    for iteration, _config in enumerate(training_conf["train_splits"]): 
+        print(f" >> {iteration} | {_config}")
         train_procedure(training_conf, iteration)
