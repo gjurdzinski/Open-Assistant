@@ -278,7 +278,7 @@ def train_procedure(training_conf, iteration):
     assert len(evals) > 0
 
 
-    wandb.init(
+    run = wandb.init(
         project="gpt-novel-multi",
         name=f"shard_{iteration}",
         group=training_conf["summeval_path"],
