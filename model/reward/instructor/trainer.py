@@ -345,7 +345,7 @@ def train_procedure(training_conf, iteration):
     rewards_df.to_csv(f"./rewards/rewards_{iteration}.csv", index=False)
 
     # remove all checkpoints:
-    pattern = str(Path(training_conf["output_dir"]) / "checkpoint-*")
+    pattern = str(Path(training_conf["output_dir"]) / "*")
     matching_dirs = glob.glob(pattern)
     for dir_path in matching_dirs:
         shutil.rmtree(dir_path)
