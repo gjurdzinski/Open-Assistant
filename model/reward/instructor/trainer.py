@@ -29,6 +29,7 @@ from tqdm import tqdm
 import glob
 import shutil
 import pandas as pd
+import wandb
 
 accuracy = evaluate.load("accuracy")
 parser = ArgumentParser()
@@ -276,14 +277,13 @@ def train_procedure(training_conf, iteration):
         )
     assert len(evals) > 0
 
-    if not training_conf["deepspeed"] or training_conf["local_rank"] == 0:
-        import wandb
 
-        wandb.init(
-            project = "gpt-novel-multi",
-            name = f"shard_{iteration}",
-            group = training_conf["summeval_path"],
-        )
+    wandb.init(
+        project="gpt-novel-multi",
+        name=f"shard_{iteration}",
+        group=training_conf["summeval_path"],
+        reinit=True
+    )
 
     trainer = RankTrainer(
         model=model,
@@ -344,11 +344,14 @@ def train_procedure(training_conf, iteration):
 
     rewards_df.to_csv(f"./rewards/rewards_{iteration}.csv", index=False)
 
+    run.finish()
+
     # remove all checkpoints:
     pattern = str(Path(training_conf["output_dir"]) / "*")
     matching_dirs = glob.glob(pattern)
     for dir_path in matching_dirs:
         shutil.rmtree(dir_path)
+    
 
     # # save predictions on eval split:
     # dataset_dict = DatasetDict.load_from_disk(training_conf["summeval_path"])
