@@ -21,6 +21,7 @@ output_dirs:
   - ./models/train0/
   - ./models/train0/
   - ./models/train0/
+  - ./models/train0/
 train_splits:
   - [train_0]
   - [train_1]
