@@ -265,6 +265,34 @@ def train_procedure(training_conf, iteration):
         return tokenizer(batch["deberta_input"], padding=True, truncation=True, max_length=4096)
 
     dataset_dict = DatasetDict.load_from_disk(training_conf["summeval_path"])
+
+    train_final_ds = dataset_dict["train_final"]
+
+    train_final_encoded = train_final_ds.map(tokenize, batched=True, batch_size=1)
+    train_final_encoded.set_format(type="torch", columns=["input_ids", "token_type_ids", "attention_mask"])
+    train_final_dataloader = DataLoader(train_final_encoded, batch_size=1, shuffle=False)
+
+    outputs_buffer = []
+
+    for batch in tqdm(train_final_dataloader):
+        inputs = {k: v.to(device) for k, v in batch.items()}
+        with torch.no_grad():
+            outputs = model(**inputs)
+
+        outputs_buffer.append(outputs.logits[:, 0])
+
+    summary_scores = torch.cat(outputs_buffer, dim=0).cpu().numpy()
+
+    tr_rewards_df = pd.DataFrame(
+        data={
+            "ArticleID": train_final_ds["ArticleID"],
+            "System": train_final_ds["System"],
+            "deberta_reward": summary_scores,
+        }
+    )
+
+    tr_rewards_df.to_csv(f"./rewards/tr_rewards_{iteration}.csv", index=False)
+
     valid_final_ds = dataset_dict["valid_final"]
 
     valid_final_encoded = valid_final_ds.map(tokenize, batched=True, batch_size=1)
@@ -282,7 +310,7 @@ def train_procedure(training_conf, iteration):
 
     summary_scores = torch.cat(outputs_buffer, dim=0).cpu().numpy()
 
-    rewards_df = pd.DataFrame(
+    val_rewards_df = pd.DataFrame(
         data={
             "ArticleID": valid_final_ds["ArticleID"],
             "System": valid_final_ds["System"],
@@ -290,7 +318,7 @@ def train_procedure(training_conf, iteration):
         }
     )
 
-    rewards_df.to_csv(f"./rewards/rewards_{iteration}.csv", index=False)
+    val_rewards_df.to_csv(f"./rewards/val_rewards_{iteration}.csv", index=False)
 
     run.finish()
 
