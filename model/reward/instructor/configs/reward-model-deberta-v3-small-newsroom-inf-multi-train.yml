@@ -1,27 +1,26 @@
 model_name: microsoft/deberta-v3-small
 learning_rate: 5e-5
-scheduler: cosine
+scheduler: constant
 gradient_checkpointing: false
 gradient_accumulation_steps: 6
 per_device_train_batch_size: 1
 per_device_eval_batch_size: 3
-warmup_steps: 25
-eval_steps: 15
-save_steps: 15
+warmup_steps: 0
+eval_steps: 50
+save_steps: 50
 max_length: 4096
-num_train_epochs: 4
+num_train_epochs: 3
 summeval_path: ./datasets/sensitivity/InformativenessRating_dataset/
 output_dirs:
   - ./models/train0/
-  - ./models/train1/
-  - ./models/train2/
-  - ./models/train3/
-  - ./models/train4/
-  - ./models/train5/
-  - ./models/train6/
-  - ./models/train7/
-  - ./models/train8/
-  - ./models/train9/
+  - ./models/train0/
+  - ./models/train0/
+  - ./models/train0/
+  - ./models/train0/
+  - ./models/train0/
+  - ./models/train0/
+  - ./models/train0/
+  - ./models/train0/
 train_splits:
   - [train_0]
   - [train_1]
