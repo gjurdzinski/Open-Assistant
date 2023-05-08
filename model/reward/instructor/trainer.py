@@ -298,10 +298,10 @@ def train_procedure(training_conf, iteration):
     trainer.evaluate()
 
     # save the best model:
-    # trainer.save_model(Path(training_conf["output_dir"]) / "checkpoint-best")
+    # trainer.save_model(Path(training_conf["output_dirs"][iteration]) / "checkpoint-best")
 
     # remove all checkpoints:
-    pattern = str(Path(training_conf["output_dir"]) / "checkpoint-*")
+    pattern = str(Path(training_conf["output_dirs"][iteration]) / "checkpoint-*")
     matching_dirs = glob.glob(pattern)
     for dir_path in matching_dirs:
         shutil.rmtree(dir_path)
@@ -311,7 +311,7 @@ def train_procedure(training_conf, iteration):
     valid_predictions = predict(dataset_dict, model, tokenizer, 4)
     df = dataset_dict["valid"].to_pandas()
     df["preds"] = pd.Series(valid_predictions)
-    df.to_json(Path(training_conf["output_dir"]) / "valid_predictions.json")
+    df.to_json(Path(training_conf["output_dirs"][iteration]) / "valid_predictions.json")
 
 
 if __name__ == "__main__":

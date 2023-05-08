@@ -110,6 +110,7 @@ def argument_parsing(parser):
         "fp16": True,
         "tokenizer_name": training_conf["model_name"],
         "output_dir": "output",
+        "output_dirs": ["output"],
     }
     args_without_none = {
         k: v for (k, v) in vars(args).items() if v is not None
