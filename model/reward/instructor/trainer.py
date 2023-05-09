@@ -183,7 +183,6 @@ def predict(dataset_dict, model, tokenizer, batch_size, split="valid"):
         outputs_list.append(preds)
 
     outputs_list = [item for sublist in outputs_list for item in sublist]
-    print(outputs_list)
     return outputs_list
 
 def train_procedure(training_conf, iteration):
