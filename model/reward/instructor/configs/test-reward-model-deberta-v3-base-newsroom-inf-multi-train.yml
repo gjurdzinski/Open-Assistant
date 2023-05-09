@@ -1,0 +1,21 @@
+model_name: OpenAssistant/reward-model-deberta-v3-base
+learning_rate: 5e-5
+scheduler: cosine
+gradient_checkpointing: false
+gradient_accumulation_steps: 16
+per_device_train_batch_size: 1
+per_device_eval_batch_size: 1
+warmup_steps: 100
+eval_steps: 50
+save_steps: 50
+max_length: 10
+num_train_epochs: 1
+report_to:
+  - tensorboard
+summeval_path: /home/grzegorz.jurdzinski/ml-home/datasets/InformativenessRating_dataset/
+output_dirs:
+  - ./models/test12/
+train_splits:
+  - [train_1, train_2]
+datasets:
+  - newsroom_local

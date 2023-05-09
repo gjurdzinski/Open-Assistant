@@ -111,6 +111,7 @@ def argument_parsing(parser):
         "tokenizer_name": training_conf["model_name"],
         "output_dir": "output",
         "output_dirs": ["output"],
+        "report_to": ["tensorboard"],
     }
     args_without_none = {
         k: v for (k, v) in vars(args).items() if v is not None
@@ -139,7 +140,9 @@ def argument_parsing(parser):
     return params
 
 
-def get_datasets(dataset_list: List[AnyStr], tokenizer, summeval_path=None, train_splits=[]):
+def get_datasets(
+    dataset_list: List[AnyStr], tokenizer, summeval_path=None, train_splits=[]
+):
     from rank_datasets import (
         AnthropicRLHF,
         GPTJSynthetic,
@@ -180,21 +183,24 @@ def get_datasets(dataset_list: List[AnyStr], tokenizer, summeval_path=None, trai
             train_datasets.append(train)
             evals["oa_private"] = eval
         elif "summeval_local" == dataset_name and summeval_path is not None:
-            train = SummevalDataset(dataset_path=summeval_path, splits=train_splits)
+            train = SummevalDataset(
+                dataset_path=summeval_path, splits=train_splits
+            )
             train_datasets.append(train)
             eval = SummevalDataset(
                 dataset_path=summeval_path, splits=["validation"]
             )
             evals["summeval_local"] = eval
         elif "newsroom_local" == dataset_name and summeval_path is not None:
-            train = NewsroomDataset(dataset_path=summeval_path, splits=train_splits)
+            train = NewsroomDataset(
+                dataset_path=summeval_path, splits=train_splits
+            )
             print(" >>>> read data from:", summeval_path)
             train_datasets.append(train)
             eval = NewsroomDataset(
                 dataset_path=summeval_path, splits=["valid"]
             )
             evals["newsroom_local"] = eval
-
 
     train = ConcatDataset(train_datasets)
     return train, evals

@@ -160,8 +160,10 @@ class RankTrainer(Trainer):
                 return loss, logits, labels
 
 
-def predict(dataset_dict, model, tokenizer, batch_size, split="valid"):
-    texts = list(dataset_dict[split]["article"])
+def predict(dataset_dict, model, tokenizer, batch_size, splits=["valid"]):
+    texts = []
+    for split in splits:
+        texts.extend(list(dataset_dict[split]["article"]))
     num_examples = len(texts)
     num_batches = (num_examples + batch_size - 1) // batch_size
     outputs_list = []
@@ -171,19 +173,24 @@ def predict(dataset_dict, model, tokenizer, batch_size, split="valid"):
         batch = texts[start_idx:end_idx]
 
         with torch.no_grad():
-            preds = model.forward(
-                tokenizer.batch_encode_plus(
-                    batch,
-                    return_tensors="pt",
-                    padding="longest",
-                    truncation=True,
-                )["input_ids"].to(torch.device("cuda")),
-            ).logits.reshape(-1).tolist()
+            preds = (
+                model.forward(
+                    tokenizer.batch_encode_plus(
+                        batch,
+                        return_tensors="pt",
+                        padding="longest",
+                        truncation=True,
+                    )["input_ids"].to(torch.device("cuda")),
+                )
+                .logits.reshape(-1)
+                .tolist()
+            )
 
         outputs_list.append(preds)
 
     outputs_list = [item for sublist in outputs_list for item in sublist]
     return outputs_list
+
 
 def train_procedure(training_conf, iteration):
     """Train a model on a given set of train datasets."""
@@ -236,7 +243,7 @@ def train_procedure(training_conf, iteration):
         save_steps=training_conf["save_steps"],
         # auto_find_batch_size=True,
         load_best_model_at_end=True,
-        report_to="wandb",
+        report_to=training_conf["report_to"],
         overwrite_output_dir=True,
         metric_for_best_model="accuracy",
     )
@@ -256,7 +263,7 @@ def train_procedure(training_conf, iteration):
             "train_splits": value[iteration]
             for key, value in training_conf.items()
             if key == "train_splits"
-        }
+        },
     )
     if "rankgen" in model_name:
         collate_fn = RankGenCollator(
@@ -270,7 +277,9 @@ def train_procedure(training_conf, iteration):
         )
     assert len(evals) > 0
 
-    if not training_conf["deepspeed"] or training_conf["local_rank"] == 0:
+    if (
+        not training_conf["deepspeed"] or training_conf["local_rank"] == 0
+    ) and "wandb" in training_conf["report_to"]:
         import wandb
 
         wandb.init(
@@ -300,28 +309,57 @@ def train_procedure(training_conf, iteration):
     # trainer.save_model(Path(training_conf["output_dirs"][iteration]) / "checkpoint-best")
 
     # remove all checkpoints:
-    pattern = str(Path(training_conf["output_dirs"][iteration]) / "checkpoint-*")
+    pattern = str(
+        Path(training_conf["output_dirs"][iteration]) / "checkpoint-*"
+    )
     matching_dirs = glob.glob(pattern)
     for dir_path in matching_dirs:
         shutil.rmtree(dir_path)
 
     # save predictions on eval split:
     dataset_dict = DatasetDict.load_from_disk(training_conf["summeval_path"])
-    valid_predictions = predict(dataset_dict, model, tokenizer, 4)
+    valid_predictions = predict(
+        dataset_dict,
+        model,
+        tokenizer,
+        batch_size=training_conf["per_device_eval_batch_size"],
+    )
     df = dataset_dict["valid"].to_pandas()
     df["preds"] = pd.Series(valid_predictions)
-    df.to_json(Path(training_conf["output_dirs"][iteration]) / "valid_predictions.json")
-    # TODO: save predictions on train split:
-    dataset_dict = DatasetDict.load_from_disk(training_conf["summeval_path"])
-    train_predictions = predict(dataset_dict, model, tokenizer, 4, split="train")
-    df = dataset_dict["train"].to_pandas()
+    df.to_json(
+        Path(training_conf["output_dirs"][iteration])
+        / "valid_predictions.json"
+    )
+    # save predictions on train split:
+    train_splits = training_conf["train_splits"][iteration]
+    train_predictions = predict(
+        dataset_dict,
+        model,
+        tokenizer,
+        batch_size=training_conf["per_device_eval_batch_size"],
+        splits=train_splits,
+    )
+    df = get_all_training_splits(dataset_dict, train_splits)
     df["preds"] = pd.Series(train_predictions)
-    df.to_json(Path(training_conf["output_dirs"][iteration]) / "train_predictions.json")
+    df.to_json(
+        Path(training_conf["output_dirs"][iteration])
+        / "train_predictions.json"
+    )
+
+
+def get_all_training_splits(dataset_dict, training_splits):
+    assert len(training_splits) > 0
+    train = dataset_dict[training_splits[0]].to_pandas()
+    for split in training_splits[1:]:
+        train = pd.concat([train, dataset_dict[split].to_pandas()])
+    return train.reset_index()
 
 
 if __name__ == "__main__":
     training_conf = argument_parsing(parser)
 
-    assert len(training_conf["train_splits"]) == len(training_conf["output_dirs"])
+    assert len(training_conf["train_splits"]) == len(
+        training_conf["output_dirs"]
+    )
     for iteration in range(len(training_conf["train_splits"])):
         train_procedure(training_conf, iteration)
