@@ -160,8 +160,8 @@ class RankTrainer(Trainer):
                 return loss, logits, labels
 
 
-def predict(dataset_dict, model, tokenizer, batch_size):
-    texts = list(dataset_dict["valid"]["article"])
+def predict(dataset_dict, model, tokenizer, batch_size, split="valid"):
+    texts = list(dataset_dict[split]["article"])
     num_examples = len(texts)
     num_batches = (num_examples + batch_size - 1) // batch_size
     outputs_list = []
@@ -312,6 +312,12 @@ def train_procedure(training_conf, iteration):
     df = dataset_dict["valid"].to_pandas()
     df["preds"] = pd.Series(valid_predictions)
     df.to_json(Path(training_conf["output_dirs"][iteration]) / "valid_predictions.json")
+    # TODO: save predictions on train split:
+    dataset_dict = DatasetDict.load_from_disk(training_conf["summeval_path"])
+    train_predictions = predict(dataset_dict, model, tokenizer, 4, split="train")
+    df = dataset_dict["train"].to_pandas()
+    df["preds"] = pd.Series(train_predictions)
+    df.to_json(Path(training_conf["output_dirs"][iteration]) / "train_predictions.json")
 
 
 if __name__ == "__main__":
