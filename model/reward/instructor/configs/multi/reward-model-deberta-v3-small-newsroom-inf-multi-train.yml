@@ -13,7 +13,7 @@ num_train_epochs: 3
 auto_find_batch_size: false
 report_to:
   - tensorboard
-summeval_path: /home/grzegorz.jurdzinski/ml-home/datasets/sensitivity_equal_chunks/InformativenessRating_dataset/
+summeval_path: /root/datasets/sensitivity_equal_chunks/InformativenessRating_dataset/
 output_dirs:
   - ./models/train0/
   - ./models/train1/

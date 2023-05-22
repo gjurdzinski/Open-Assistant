@@ -1,0 +1,40 @@
+model_name: microsoft/deberta-v3-small
+learning_rate: 5e-5
+scheduler: constant
+gradient_checkpointing: false
+gradient_accumulation_steps: 6
+per_device_train_batch_size: 1
+per_device_eval_batch_size: 4
+warmup_steps: 0
+eval_steps: 50
+save_steps: 50
+max_length: 4096
+num_train_epochs: 3
+auto_find_batch_size: false
+report_to:
+  - tensorboard
+summeval_path: /root/datasets/sensitivity_equal_chunks/RelevanceRating_dataset/
+output_dirs:
+  - ./models/relevance/deberta-small/train0/
+  - ./models/relevance/deberta-small/train1/
+  - ./models/relevance/deberta-small/train2/
+  - ./models/relevance/deberta-small/train3/
+  - ./models/relevance/deberta-small/train4/
+  - ./models/relevance/deberta-small/train5/
+  - ./models/relevance/deberta-small/train6/
+  - ./models/relevance/deberta-small/train7/
+  - ./models/relevance/deberta-small/train8/
+  - ./models/relevance/deberta-small/train9/
+train_splits:
+  - [train_0]
+  - [train_1]
+  - [train_2]
+  - [train_3]
+  - [train_4]
+  - [train_5]
+  - [train_6]
+  - [train_7]
+  - [train_8]
+  - [train_9]
+datasets:
+  - newsroom_local
