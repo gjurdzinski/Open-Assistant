@@ -8,6 +8,11 @@ __pycache__
 .DS_Store
 .vscode
 
+# Directories below are used for storing checkpoints and predictions.
+models
+reward_model
+rewards
+
 # Generated files
 backend/oasst-openapi.json
 backend/openapi.json
