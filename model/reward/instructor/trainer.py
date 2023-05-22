@@ -217,8 +217,9 @@ def train_procedure(training_conf, iteration):
         print("Number of trainable : {}M".format(int(params / 1e6)))
 
     optimizer = OptimizerNames.ADAMW_HF
+    output_dir = training_conf["output_dirs"][iteration]
     args = TrainingArguments(
-        output_dir=training_conf["output_dirs"][iteration],
+        output_dir=output_dir,
         num_train_epochs=training_conf["num_train_epochs"],
         warmup_steps=training_conf["warmup_steps"],
         optim=optimizer,
@@ -311,7 +312,7 @@ def train_procedure(training_conf, iteration):
     trainer.evaluate()
 
     # save the best model:
-    best_model_path = Path(training_conf["output_dir"]) / "checkpoint-best"
+    best_model_path = Path(output_dir) / "checkpoint-best"
     trainer.save_model(best_model_path)
 
     print("final_inference...")
@@ -366,7 +367,9 @@ def train_procedure(training_conf, iteration):
         }
     )
 
-    tr_rewards_df.to_csv(f"./rewards/tr_rewards_{iteration}.csv", index=False)
+    tr_rewards_df.to_csv(
+        Path(output_dir) / f"tr_rewards_{iteration}.csv", index=False
+    )
 
     valid_final_ds = dataset_dict["valid_final"]
 
@@ -404,14 +407,14 @@ def train_procedure(training_conf, iteration):
     )
 
     val_rewards_df.to_csv(
-        f"./rewards/val_rewards_{iteration}.csv", index=False
+        Path(output_dir) / f"val_rewards_{iteration}.csv", index=False
     )
 
     if "wandb" in training_conf["report_to"]:
         run.finish()
 
     # remove all checkpoints:
-    pattern = str(Path(training_conf["output_dir"]) / "*")
+    pattern = str(Path(output_dir) / "checkpoint*")
     matching_dirs = glob.glob(pattern)
     for dir_path in matching_dirs:
         shutil.rmtree(dir_path)
