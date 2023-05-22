@@ -308,8 +308,11 @@ def train_procedure(training_conf, iteration):
     # evaluate at step zero:
     trainer.evaluate()
 
-    trainer.train()
-    trainer.evaluate()
+    # This is a hack to allow empty list of train datasets to easily skip
+    # training and evaluete non-fine-tuned model.
+    if train.cumulative_sizes[0] > 0:
+        trainer.train()
+        trainer.evaluate()
 
     # save the best model:
     best_model_path = Path(output_dir) / "checkpoint-best"
@@ -368,7 +371,7 @@ def train_procedure(training_conf, iteration):
     )
 
     tr_rewards_df.to_csv(
-        Path(output_dir) / f"tr_rewards_{iteration}.csv", index=False
+        Path(output_dir).parent / f"tr_rewards_{iteration}.csv", index=False
     )
 
     valid_final_ds = dataset_dict["valid_final"]
@@ -407,7 +410,7 @@ def train_procedure(training_conf, iteration):
     )
 
     val_rewards_df.to_csv(
-        Path(output_dir) / f"val_rewards_{iteration}.csv", index=False
+        Path(output_dir).parent / f"val_rewards_{iteration}.csv", index=False
     )
 
     if "wandb" in training_conf["report_to"]:

@@ -1,4 +1,4 @@
-model_name: microsoft/deberta-v3-small
+model_name: OpenAssistant/reward-model-deberta-v3-base
 learning_rate: 5e-5
 scheduler: constant
 gradient_checkpointing: false

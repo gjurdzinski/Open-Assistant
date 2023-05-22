@@ -12,6 +12,7 @@ __pycache__
 models
 reward_model
 rewards
+runs
 
 # Generated files
 backend/oasst-openapi.json
