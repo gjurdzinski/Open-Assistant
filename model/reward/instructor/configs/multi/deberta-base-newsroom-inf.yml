@@ -15,7 +15,8 @@ report_to:
   - tensorboard
 summeval_path: /root/datasets/sensitivity_equal_chunks/InformativenessRating_dataset/
 output_dirs:
-  - ./runs/newsroom-incremental/deberta-base/InformativenessRating/train0/
+  - ./runs/newsroom-incremental/deberta-base/InformativenessRating/B/10/
+  # - ./runs/newsroom-incremental/deberta-base/InformativenessRating/train0/
   # - ./runs/newsroom-incremental/deberta-base/InformativenessRating/train10/
   # - ./runs/newsroom-incremental/deberta-base/InformativenessRating/train20/
   # - ./runs/newsroom-incremental/deberta-base/InformativenessRating/train30/
@@ -25,10 +26,10 @@ output_dirs:
   # - ./runs/newsroom-incremental/deberta-base/InformativenessRating/train70/
   # - ./runs/newsroom-incremental/deberta-base/InformativenessRating/train80/
   # - ./runs/newsroom-incremental/deberta-base/InformativenessRating/train90/
-  - ./runs/newsroom-incremental/deberta-base/InformativenessRating/train100/
+  # - ./runs/newsroom-incremental/deberta-base/InformativenessRating/train100/
 train_splits:
-  - []
-  # - [train_0]
+  # - []
+  - [train_0]
   # - [train_0, train_1]
   # - [train_0, train_1, train_2]
   # - [train_0, train_1, train_2, train_3]
@@ -37,6 +38,6 @@ train_splits:
   # - [train_0, train_1, train_2, train_3, train_4, train_5, train_6]
   # - [train_0, train_1, train_2, train_3, train_4, train_5, train_6, train_7]
   # - [train_0, train_1, train_2, train_3, train_4, train_5, train_6, train_7, train_8]
-  - [train_0, train_1, train_2, train_3, train_4, train_5, train_6, train_7, train_8, train_9]
+  # - [train_0, train_1, train_2, train_3, train_4, train_5, train_6, train_7, train_8, train_9]
 datasets:
   - newsroom_local
