@@ -370,9 +370,7 @@ def train_procedure(training_conf, iteration):
         }
     )
 
-    tr_rewards_df.to_csv(
-        Path(output_dir).parent / f"tr_rewards_{iteration}.csv", index=False
-    )
+    tr_rewards_df.to_csv(Path(output_dir) / f"tr_rewards.csv", index=False)
 
     valid_final_ds = dataset_dict["valid_final"]
 
@@ -410,7 +408,8 @@ def train_procedure(training_conf, iteration):
     )
 
     val_rewards_df.to_csv(
-        Path(output_dir).parent / f"val_rewards_{iteration}.csv", index=False
+        Path(output_dir) / f"val_rewards.csv",
+        index=False,
     )
 
     if "wandb" in training_conf["report_to"]:
