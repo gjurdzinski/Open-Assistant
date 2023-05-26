@@ -161,37 +161,6 @@ class RankTrainer(Trainer):
                 return loss, logits, labels
 
 
-def predict(dataset_dict, model, tokenizer, batch_size):
-    texts = list(dataset_dict["valid"]["article"])
-    num_examples = len(texts)
-    num_batches = (num_examples + batch_size - 1) // batch_size
-    outputs_list = []
-    for i in range(num_batches):
-        start_idx = i * batch_size
-        end_idx = min((i + 1) * batch_size, num_examples)
-        batch = texts[start_idx:end_idx]
-
-        with torch.no_grad():
-            preds = (
-                model.forward(
-                    tokenizer.batch_encode_plus(
-                        batch,
-                        return_tensors="pt",
-                        padding="longest",
-                        truncation=True,
-                    )["input_ids"].to(torch.device("cuda")),
-                )
-                .logits.reshape(-1)
-                .tolist()
-            )
-
-        outputs_list.append(preds)
-
-    outputs_list = [item for sublist in outputs_list for item in sublist]
-    print(outputs_list)
-    return outputs_list
-
-
 def train_procedure(training_conf, iteration):
     """Train a model on a given set of train datasets."""
     training_conf = argument_parsing(parser)
@@ -312,14 +281,6 @@ def train_procedure(training_conf, iteration):
         best_model_path
     ).to(device)
 
-    def tokenize(batch):
-        return tokenizer(
-            batch["deberta_input"],
-            padding=True,
-            truncation=True,
-            max_length=training_conf["max_length"],
-        )
-
     dataset_dict = DatasetDict.load_from_disk(training_conf["summeval_path"])
 
     get_rewards_and_save(
@@ -341,7 +302,7 @@ def train_procedure(training_conf, iteration):
     if "wandb" in training_conf["report_to"]:
         run.finish()
 
-    # remove all checkpoints:
+    # remove all checkpoints
     pattern = str(Path(output_dir) / "checkpoint*")
     matching_dirs = glob.glob(pattern)
     for dir_path in matching_dirs:
