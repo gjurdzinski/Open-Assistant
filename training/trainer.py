@@ -1,4 +1,7 @@
+import glob
+import shutil
 from argparse import ArgumentParser
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import evaluate
@@ -6,15 +9,16 @@ import numpy as np
 import pandas as pd
 import torch
 from datasets import DatasetDict
-from torch.utils.data import DataLoader
 from rank_datasets import DataCollatorForPairRank
 from torch import nn
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 from transformers import (
     AutoModelForSequenceClassification,
+    AutoTokenizer,
     PreTrainedModel,
     Trainer,
     TrainingArguments,
-    AutoTokenizer,
 )
 from transformers.training_args import OptimizerNames
 from utils import (
@@ -23,10 +27,6 @@ from utils import (
     get_datasets,
     get_tokenizer,
 )
-from pathlib import Path
-from tqdm import tqdm
-import glob
-import shutil
 
 accuracy = evaluate.load("accuracy")
 parser = ArgumentParser()
@@ -322,81 +322,93 @@ def train_procedure(training_conf, iteration):
 
     dataset_dict = DatasetDict.load_from_disk(training_conf["summeval_path"])
 
-    train_final_ds = dataset_dict["train_final"]
+    # train_final_ds = dataset_dict["train_final"]
 
-    train_final_encoded = train_final_ds.map(
-        tokenize,
-        batched=True,
-        batch_size=training_conf["per_device_eval_batch_size"],
-    )
-    train_final_encoded.set_format(
-        type="torch", columns=["input_ids", "token_type_ids", "attention_mask"]
-    )
-    train_final_dataloader = DataLoader(
-        train_final_encoded,
-        batch_size=training_conf["per_device_eval_batch_size"],
-        shuffle=False,
-    )
+    # train_final_encoded = train_final_ds.map(
+    #     tokenize,
+    #     batched=True,
+    #     batch_size=training_conf["per_device_eval_batch_size"],
+    # )
+    # train_final_encoded.set_format(type="torch", columns=["input_ids", "token_type_ids", "attention_mask"])
+    # train_final_dataloader = DataLoader(
+    #     train_final_encoded,
+    #     batch_size=training_conf["per_device_eval_batch_size"],
+    #     shuffle=False,
+    # )
 
-    outputs_buffer = []
+    # outputs_buffer = []
 
-    for batch in tqdm(train_final_dataloader):
-        inputs = {k: v.to(device) for k, v in batch.items()}
-        with torch.no_grad():
-            outputs = model(**inputs)
+    # for batch in tqdm(train_final_dataloader):
+    #     inputs = {k: v.to(device) for k, v in batch.items()}
+    #     with torch.no_grad():
+    #         outputs = model(**inputs)
 
-        outputs_buffer.append(outputs.logits[:, 0])
+    #     outputs_buffer.append(outputs.logits[:, 0])
 
-    summary_scores = torch.cat(outputs_buffer, dim=0).cpu().numpy()
+    # summary_scores = torch.cat(outputs_buffer, dim=0).cpu().numpy()
 
-    tr_rewards_df = pd.DataFrame(
-        data={
-            "ArticleID": train_final_ds["ArticleID"],
-            "System": train_final_ds["System"],
-            "deberta_reward": summary_scores,
-        }
-    )
+    # tr_rewards_df = pd.DataFrame(
+    #     data={
+    #         "ArticleID": train_final_ds["ArticleID"],
+    #         "System": train_final_ds["System"],
+    #         "deberta_reward": summary_scores,
+    #     }
+    # )
 
-    tr_rewards_df.to_csv(Path(output_dir) / f"tr_rewards.csv", index=False)
+    # tr_rewards_df.to_csv(Path(output_dir) / f"tr_rewards.csv", index=False)
 
-    valid_final_ds = dataset_dict["valid_final"]
-
-    valid_final_encoded = valid_final_ds.map(
-        tokenize,
-        batched=True,
-        batch_size=training_conf["per_device_eval_batch_size"],
-    )
-    valid_final_encoded.set_format(
-        type="torch", columns=["input_ids", "token_type_ids", "attention_mask"]
-    )
-    valid_final_dataloader = DataLoader(
-        valid_final_encoded,
-        batch_size=training_conf["per_device_eval_batch_size"],
-        shuffle=False,
+    get_predictions_and_save(
+        tokenizer,
+        model,
+        dataset_dict["train_final"],
+        output_dir,
+        "tr_rewards.csv",
     )
 
-    outputs_buffer = []
+    # valid_final_ds = dataset_dict["valid_final"]
 
-    for batch in tqdm(valid_final_dataloader):
-        inputs = {k: v.to(device) for k, v in batch.items()}
-        with torch.no_grad():
-            outputs = model(**inputs)
+    # valid_final_encoded = valid_final_ds.map(
+    #     tokenize,
+    #     batched=True,
+    #     batch_size=training_conf["per_device_eval_batch_size"],
+    # )
+    # valid_final_encoded.set_format(type="torch", columns=["input_ids", "token_type_ids", "attention_mask"])
+    # valid_final_dataloader = DataLoader(
+    #     valid_final_encoded,
+    #     batch_size=training_conf["per_device_eval_batch_size"],
+    #     shuffle=False,
+    # )
 
-        outputs_buffer.append(outputs.logits[:, 0])
+    # outputs_buffer = []
 
-    summary_scores = torch.cat(outputs_buffer, dim=0).cpu().numpy()
+    # for batch in tqdm(valid_final_dataloader):
+    #     inputs = {k: v.to(device) for k, v in batch.items()}
+    #     with torch.no_grad():
+    #         outputs = model(**inputs)
 
-    val_rewards_df = pd.DataFrame(
-        data={
-            "ArticleID": valid_final_ds["ArticleID"],
-            "System": valid_final_ds["System"],
-            "deberta_reward": summary_scores,
-        }
-    )
+    #     outputs_buffer.append(outputs.logits[:, 0])
 
-    val_rewards_df.to_csv(
-        Path(output_dir) / f"val_rewards.csv",
-        index=False,
+    # summary_scores = torch.cat(outputs_buffer, dim=0).cpu().numpy()
+
+    # val_rewards_df = pd.DataFrame(
+    #     data={
+    #         "ArticleID": valid_final_ds["ArticleID"],
+    #         "System": valid_final_ds["System"],
+    #         "deberta_reward": summary_scores,
+    #     }
+    # )
+
+    # val_rewards_df.to_csv(
+    #     Path(output_dir) / f"val_rewards.csv",
+    #     index=False,
+    # )
+
+    get_predictions_and_save(
+        tokenizer,
+        model,
+        dataset_dict["valid_final"],
+        output_dir,
+        "val_rewards.csv",
     )
 
     if "wandb" in training_conf["report_to"]:
@@ -407,6 +419,51 @@ def train_procedure(training_conf, iteration):
     matching_dirs = glob.glob(pattern)
     for dir_path in matching_dirs:
         shutil.rmtree(dir_path)
+
+
+def get_predictions_and_save(tokenizer, model, final_ds, output_dir, filename):
+    def tokenize(batch):
+        return tokenizer(
+            batch["deberta_input"],
+            padding=True,
+            truncation=True,
+            max_length=training_conf["max_length"],
+        )
+
+    final_encoded = final_ds.map(
+        tokenize,
+        batched=True,
+        batch_size=training_conf["per_device_eval_batch_size"],
+    )
+    final_encoded.set_format(
+        type="torch", columns=["input_ids", "token_type_ids", "attention_mask"]
+    )
+    final_dataloader = DataLoader(
+        final_encoded,
+        batch_size=training_conf["per_device_eval_batch_size"],
+        shuffle=False,
+    )
+
+    outputs_buffer = []
+
+    for batch in tqdm(final_dataloader):
+        inputs = {k: v.to(device) for k, v in batch.items()}
+        with torch.no_grad():
+            outputs = model(**inputs)
+
+        outputs_buffer.append(outputs.logits[:, 0])
+
+    summary_scores = torch.cat(outputs_buffer, dim=0).cpu().numpy()
+
+    rewards_df = pd.DataFrame(
+        data={
+            "ArticleID": final_ds["ArticleID"],
+            "System": final_ds["System"],
+            "deberta_reward": summary_scores,
+        }
+    )
+
+    rewards_df.to_csv(Path(output_dir) / filename, index=False)
 
 
 if __name__ == "__main__":

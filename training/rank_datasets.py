@@ -149,7 +149,6 @@ class SummevalDataset(Dataset):
         self.max_comparison_per_sample = max_comparison_per_sample
         if type(split) == str:
             splits = [splits]
-        # major_split = split if "train" == split else "validation"
         dataset_dict = DatasetDict.load_from_disk(dataset_path)
         for split in splits:
             dataset = dataset_dict[split]
