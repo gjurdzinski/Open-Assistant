@@ -1,0 +1,299 @@
+{
+    "os": "Linux-5.19.0-38-generic-x86_64-with-glibc2.35",
+    "python": "3.10.6",
+    "heartbeatAt": "2023-04-05T15:25:05.756241",
+    "startedAt": "2023-04-05T15:25:03.878327",
+    "docker": null,
+    "cuda": null,
+    "args": [
+        "configs/reward-model-deberta-v3-base-newsroom-inf-multi-train.yml"
+    ],
+    "state": "running",
+    "program": "/home/grzegorz.jurdzinski/repos/Open-Assistant/model/reward/instructor/trainer.py",
+    "codePath": "model/reward/instructor/trainer.py",
+    "git": {
+        "remote": "git@github.com:gjurdzinski/Open-Assistant.git",
+        "commit": "e782f12dcd455af43b58e731233d9f15c4073537"
+    },
+    "email": "g.jurdzinski@gmail.com",
+    "root": "/home/grzegorz.jurdzinski/repos/Open-Assistant",
+    "host": "pascal05.intra.deepsense.ai",
+    "username": "grzegorz.jurdzinski",
+    "executable": "/mnt/ml-team/homes/grzegorz.jurdzinski/novel-gpt/.env/bin/python3",
+    "cpu_count": 24,
+    "cpu_count_logical": 48,
+    "cpu_freq": {
+        "current": 1658.4582291666666,
+        "min": 1200.0,
+        "max": 3300.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 2901.132,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1557.959,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 2100.372,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1200.12,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1200.0,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1200.157,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1999.891,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1200.111,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1200.089,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 2399.631,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1199.511,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1200.165,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1998.699,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1199.937,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 2900.206,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 2011.553,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1200.0,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1200.581,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1200.0,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 3300.0,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1200.0,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 2100.154,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 2100.0,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 3300.0,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1200.0,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1685.215,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1433.198,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1200.771,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1201.268,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1200.486,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 2001.018,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1200.0,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1200.374,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1487.941,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1200.075,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1213.81,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1200.0,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1200.0,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 3300.0,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 2064.96,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 3300.0,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1200.374,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 2099.84,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1200.0,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 2100.0,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1200.0,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1200.0,
+            "min": 1200.0,
+            "max": 3300.0
+        },
+        {
+            "current": 1200.0,
+            "min": 1200.0,
+            "max": 3300.0
+        }
+    ],
+    "disk": {
+        "total": 125.9169921875,
+        "used": 35.47848892211914
+    },
+    "gpu": "NVIDIA GeForce GTX 1070",
+    "gpu_count": 4,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA GeForce GTX 1070",
+            "memory_total": 8589934592
+        },
+        {
+            "name": "NVIDIA GeForce GTX 1070",
+            "memory_total": 8589934592
+        },
+        {
+            "name": "NVIDIA GeForce GTX 1070",
+            "memory_total": 8589934592
+        },
+        {
+            "name": "NVIDIA GeForce GTX 1070",
+            "memory_total": 8589934592
+        }
+    ],
+    "memory": {
+        "total": 125.76591110229492
+    }
+}
