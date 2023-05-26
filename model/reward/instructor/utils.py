@@ -5,23 +5,16 @@ import yaml
 from sklearn.model_selection import train_test_split
 from tokenizers import pre_tokenizers
 from torch.utils.data import Subset
-from transformers import AutoTokenizer, T5Tokenizer
+from transformers import AutoTokenizer
 
 # @agoryuno contributed this
 re_reference_remove = re.compile(r"\[\d+(?:,\s*\d+)*?\]")
 
 
-def get_tokenizer(tokenizer_name, per_digit_tokens=False):
-    if "t5" in tokenizer_name:  # rankgen
-        tokenizer = T5Tokenizer.from_pretrained(
-            tokenizer_name, truncation_side="left"
-        )
-    else:
-        tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
-    if "galactica" in tokenizer_name:
-        tokenizer.add_special_tokens(
-            {"pad_token": "<pad>", "eos_token": "</s>"}
-        )
+def get_tokenizer(tokenizer_name, max_length, per_digit_tokens=False):
+    tokenizer = AutoTokenizer.from_pretrained(
+        tokenizer_name, truncation=True, max_length=max_length
+    )
 
     if per_digit_tokens:
         tokenizer._tokenizer.pre_processor = pre_tokenizers.Digits(True)

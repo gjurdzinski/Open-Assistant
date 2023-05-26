@@ -244,7 +244,9 @@ def train_procedure(training_conf, iteration):
     )
 
     tokenizer = get_tokenizer(
-        training_conf["tokenizer_name"], training_conf["per_digit_tokens"]
+        training_conf["tokenizer_name"],
+        training_conf["max_length"],
+        per_digit_tokens=training_conf["per_digit_tokens"],
     )
     train, evals = get_datasets(
         training_conf["datasets"],
