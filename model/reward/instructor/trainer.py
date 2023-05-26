@@ -5,10 +5,9 @@ import evaluate
 import numpy as np
 import pandas as pd
 import torch
-from datasets import DatasetDict, Dataset
+from datasets import DatasetDict
 from torch.utils.data import DataLoader
-from models import RankGenModel
-from rank_datasets import DataCollatorForPairRank, RankGenCollator
+from rank_datasets import DataCollatorForPairRank
 from torch import nn
 from transformers import (
     AutoModelForSequenceClassification,
@@ -35,10 +34,7 @@ parser = ArgumentParser()
 # Do not set defaults here, but set them in utils.py so that the config yaml can override them.
 parser.add_argument("config", type=str)
 parser.add_argument("--local_rank", type=int)
-parser.add_argument("--deepspeed", action="store_true")
-parser.add_argument("--no-deepspeed", dest="deepspeed", action="store_false")
 parser.add_argument("--per-digit-tokens", action="store_true")
-parser.add_argument("--output_dir", type=str)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -201,12 +197,9 @@ def train_procedure(training_conf, iteration):
     training_conf = argument_parsing(parser)
 
     model_name = training_conf["model_name"]
-    if "rankgen-t5" in model_name:
-        model = RankGenModel(model_name)
-    else:
-        model = AutoModelForSequenceClassification.from_pretrained(
-            model_name, num_labels=1, problem_type="regression"
-        )
+    model = AutoModelForSequenceClassification.from_pretrained(
+        model_name, num_labels=1, problem_type="regression"
+    )
     if "freeze_layer" in training_conf:
         num_layer = training_conf["freeze_layer"]
         model = freeze_top_n_layers(model, num_layer)
@@ -226,9 +219,6 @@ def train_procedure(training_conf, iteration):
         lr_scheduler_type=training_conf["scheduler"],
         learning_rate=training_conf["learning_rate"],
         # half_precision_backend="apex",
-        deepspeed="configs/zero_config.json"
-        if training_conf["deepspeed"]
-        else None,
         fp16=training_conf["fp16"],
         local_rank=training_conf["local_rank"],
         gradient_checkpointing=training_conf["gradient_checkpointing"],
@@ -258,7 +248,6 @@ def train_procedure(training_conf, iteration):
     )
     train, evals = get_datasets(
         training_conf["datasets"],
-        tokenizer,
         **{
             "summeval_path": value
             for key, value in training_conf.items()
@@ -270,16 +259,12 @@ def train_procedure(training_conf, iteration):
             if key == "train_splits"
         },
     )
-    if "rankgen" in model_name:
-        collate_fn = RankGenCollator(
-            tokenizer, max_length=training_conf["max_length"]
-        )
-    else:
-        collate_fn = DataCollatorForPairRank(
-            tokenizer,
-            max_length=training_conf["max_length"],
-            drop_token_type=training_conf.get("drop_token_type", False),
-        )
+
+    collate_fn = DataCollatorForPairRank(
+        tokenizer,
+        max_length=training_conf["max_length"],
+        drop_token_type=training_conf.get("drop_token_type", False),
+    )
     assert len(evals) > 0
 
     if "wandb" in training_conf["report_to"]:
