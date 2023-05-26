@@ -29,11 +29,15 @@ def webgpt_return_format(row):
 
 def get_tokenizer(tokenizer_name, per_digit_tokens=False):
     if "t5" in tokenizer_name:  # rankgen
-        tokenizer = T5Tokenizer.from_pretrained(tokenizer_name, truncation_side="left")
+        tokenizer = T5Tokenizer.from_pretrained(
+            tokenizer_name, truncation_side="left"
+        )
     else:
         tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
     if "galactica" in tokenizer_name:
-        tokenizer.add_special_tokens({"pad_token": "<pad>", "eos_token": "</s>"})
+        tokenizer.add_special_tokens(
+            {"pad_token": "<pad>", "eos_token": "</s>"}
+        )
 
     if per_digit_tokens:
         tokenizer._tokenizer.pre_processor = pre_tokenizers.Digits(True)
@@ -43,7 +47,10 @@ def get_tokenizer(tokenizer_name, per_digit_tokens=False):
 
 def train_val_dataset(dataset, val_split=0.2):
     train_idx, val_idx = train_test_split(
-        list(range(len(dataset))), test_size=val_split, random_state=666, shuffle=True
+        list(range(len(dataset))),
+        test_size=val_split,
+        random_state=666,
+        shuffle=True,
     )
     # [3879, 11479, 8341, 9177, 10798, 18177, 5735, 15669, 4837, 2760]
     print(val_idx[:10])
@@ -81,6 +88,7 @@ def argument_parsing(parser):
         training_conf = yaml.safe_load(f.read())
 
     default_params = {
+        "train_splits": [["train"]],
         "num_train_epochs": 4,
         "learning_rate": 3e-5,
         "eval_steps": 500,
@@ -102,9 +110,15 @@ def argument_parsing(parser):
         "fp16": True,
         "tokenizer_name": training_conf["model_name"],
         "output_dir": "output",
+        "auto_find_batch_size": False,
+        "report_to": [],
     }
-    args_without_none = {k: v for (k, v) in vars(args).items() if v is not None}
-    if not args_without_none["per_digit_tokens"]:  # Don't let missing command line override the conf
+    args_without_none = {
+        k: v for (k, v) in vars(args).items() if v is not None
+    }
+    if not args_without_none[
+        "per_digit_tokens"
+    ]:  # Don't let missing command line override the conf
         del args_without_none["per_digit_tokens"]
 
     # Apply default params, then yaml config, then command line args where specific (i.e. not None)
@@ -126,8 +140,18 @@ def argument_parsing(parser):
     return params
 
 
-def get_datasets(dataset_list: List[AnyStr], tokenizer):
-    from rank_datasets import AnthropicRLHF, GPTJSynthetic, HFSummary, OAPrivate, WebGPT
+def get_datasets(
+    dataset_list: List[AnyStr], tokenizer, summeval_path=None, train_splits=[]
+):
+    from rank_datasets import (
+        AnthropicRLHF,
+        GPTJSynthetic,
+        HFSummary,
+        OAPrivate,
+        WebGPT,
+        SummevalDataset,
+        NewsroomDataset,
+    )
     from torch.utils.data import ConcatDataset
 
     train_datasets, evals = [], {}
@@ -158,6 +182,25 @@ def get_datasets(dataset_list: List[AnyStr], tokenizer):
             eval = OAPrivate(split="val", sep_token=tokenizer.sep_token)
             train_datasets.append(train)
             evals["oa_private"] = eval
+        elif "summeval_local" == dataset_name and summeval_path is not None:
+            train = SummevalDataset(
+                dataset_path=summeval_path, splits=train_splits
+            )
+            train_datasets.append(train)
+            eval = SummevalDataset(
+                dataset_path=summeval_path, splits=["validation"]
+            )
+            evals["summeval_local"] = eval
+        elif "newsroom_local" == dataset_name and summeval_path is not None:
+            train = NewsroomDataset(
+                dataset_path=summeval_path, splits=train_splits
+            )
+            print(" >>>> read data from:", summeval_path)
+            train_datasets.append(train)
+            eval = NewsroomDataset(
+                dataset_path=summeval_path, splits=["valid"]
+            )
+            evals["newsroom_local"] = eval
 
     train = ConcatDataset(train_datasets)
     return train, evals

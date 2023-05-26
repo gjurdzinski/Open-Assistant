@@ -1,0 +1,42 @@
+model_name: microsoft/deberta-v3-base
+learning_rate: 5e-5
+scheduler: constant
+gradient_checkpointing: false
+gradient_accumulation_steps: 6
+per_device_train_batch_size: 1
+per_device_eval_batch_size: 4
+warmup_steps: 0
+eval_steps: 50
+save_steps: 50
+max_length: 4096
+num_train_epochs: 3
+auto_find_batch_size: false
+report_to:
+  - tensorboard
+summeval_path: /root/datasets/sensitivity_equal_chunks/InformativenessRating_dataset/
+output_dirs:
+  - ./runs/newsroom-incremental/deberta-base/InformativenessRating/train0/
+  # - ./runs/newsroom-incremental/deberta-base/InformativenessRating/train10/
+  # - ./runs/newsroom-incremental/deberta-base/InformativenessRating/train20/
+  # - ./runs/newsroom-incremental/deberta-base/InformativenessRating/train30/
+  # - ./runs/newsroom-incremental/deberta-base/InformativenessRating/train40/
+  # - ./runs/newsroom-incremental/deberta-base/InformativenessRating/train50/
+  # - ./runs/newsroom-incremental/deberta-base/InformativenessRating/train60/
+  # - ./runs/newsroom-incremental/deberta-base/InformativenessRating/train70/
+  # - ./runs/newsroom-incremental/deberta-base/InformativenessRating/train80/
+  # - ./runs/newsroom-incremental/deberta-base/InformativenessRating/train90/
+  - ./runs/newsroom-incremental/deberta-base/InformativenessRating/train100/
+train_splits:
+  - []
+  # - [train_0]
+  # - [train_0, train_1]
+  # - [train_0, train_1, train_2]
+  # - [train_0, train_1, train_2, train_3]
+  # - [train_0, train_1, train_2, train_3, train_4]
+  # - [train_0, train_1, train_2, train_3, train_4, train_5]
+  # - [train_0, train_1, train_2, train_3, train_4, train_5, train_6]
+  # - [train_0, train_1, train_2, train_3, train_4, train_5, train_6, train_7]
+  # - [train_0, train_1, train_2, train_3, train_4, train_5, train_6, train_7, train_8]
+  - [train_0, train_1, train_2, train_3, train_4, train_5, train_6, train_7, train_8, train_9]
+datasets:
+  - newsroom_local
