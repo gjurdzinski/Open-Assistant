@@ -35,11 +35,6 @@ repos:
       - id: trailing-whitespace
       - id: check-ast
       - id: check-yaml
-        # Always check YAML but skip a few YAML files that are auto-generated
-        # and which break the standard YAML check.  The alternative would be to
-        # skip any unsafe errors (and thus break YAML compatibility) or use
-        # some other checker that may not work in general.
-        exclude: ^copilot/.*/addons/.*$
       - id: check-json
       - id: check-case-conflict
       - id: detect-private-key
@@ -71,25 +66,3 @@ repos:
     rev: 5.12.0
     hooks:
       - id: isort
-
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v2.7.1
-    hooks:
-      - id: prettier
-        args:
-          [
-            --prose-wrap=always,
-            --write,
-            --ignore-path=./website/.prettierignore,
-          ]
-
-  - repo: local
-    hooks:
-      - id: next-lint-website
-        name: Lint website
-        files: ^website/
-        exclude: ^website/node_modules/
-        types_or: [javascript, jsx, ts, tsx]
-        language: node
-        pass_filenames: false
-        entry: website/next-lint.js
