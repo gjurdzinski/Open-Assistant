@@ -27,6 +27,10 @@ from utils import (
     get_datasets,
     get_tokenizer,
 )
+from eval.bucketing import (
+    get_buckets_bounds_and_scaler,
+    map_to_optimal_buckets,
+)
 
 accuracy = evaluate.load("accuracy")
 parser = ArgumentParser()
@@ -231,6 +235,9 @@ def train_procedure(training_conf, iteration):
         },
     )
 
+    if training_conf["write_bucketised_predictions"]:
+        raw_dataset = pd.read_csv(training_conf["raw_dataset_path"])
+
     collate_fn = DataCollatorForPairRank(
         tokenizer,
         max_length=training_conf["max_length"],
@@ -283,7 +290,7 @@ def train_procedure(training_conf, iteration):
 
     dataset_dict = DatasetDict.load_from_disk(training_conf["summeval_path"])
 
-    get_rewards_and_save(
+    tr_rewards = get_rewards_and_save(
         tokenizer,
         model,
         dataset_dict["train_final"],
@@ -291,13 +298,42 @@ def train_procedure(training_conf, iteration):
         "tr_rewards.csv",
     )
 
-    get_rewards_and_save(
+    val_rewards = get_rewards_and_save(
         tokenizer,
         model,
         dataset_dict["valid_final"],
         output_dir,
         "val_rewards.csv",
     )
+
+    if training_conf["write_bucketised_predictions"]:
+        bounds, scaler = get_buckets_bounds_and_scaler(
+            dataset_df=raw_dataset,
+            tr_preds_df=tr_rewards,
+            metric=training_conf["metric"],
+        )
+
+        # bucketise and save the validation predictions
+        bucketised = map_to_optimal_buckets(
+            val_rewards,
+            bounds,
+            scaler,
+        )
+        bucketised.to_csv(
+            Path(output_dir) / "val_rewards_buckets.csv",
+            index=False,
+        )
+
+        # bucketise and save the train predictions
+        bucketised = map_to_optimal_buckets(
+            tr_rewards,
+            bounds,
+            scaler,
+        )
+        bucketised.to_csv(
+            Path(output_dir) / "tr_rewards_buckets.csv",
+            index=False,
+        )
 
     if "wandb" in training_conf["report_to"]:
         run.finish()
@@ -352,6 +388,7 @@ def get_rewards_and_save(tokenizer, model, final_ds, output_dir, filename):
     )
 
     rewards_df.to_csv(Path(output_dir) / filename, index=False)
+    return rewards_df
 
 
 if __name__ == "__main__":

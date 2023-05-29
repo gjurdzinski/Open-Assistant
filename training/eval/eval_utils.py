@@ -7,8 +7,9 @@ Metric = Literal["InformativenessRating", "RelevanceRating"]
 Split = Literal["train", "valid"]
 
 _INCREMENTAL_NAMES_PARTIAL = [
-    "rewards_00",
-    "rewards_10",
+    # "rewards_00",
+    "rewards_01",
+    # "rewards_10",
 ]
 _INCREMENTAL_NAMES = [
     "rewards_00",

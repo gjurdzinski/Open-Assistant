@@ -1,6 +1,6 @@
 from typing import List, Tuple
 from sklearn.preprocessing import MinMaxScaler
-from utils import add_labeler_id_column
+from eval.eval_utils import add_labeler_id_column
 import pandas as pd
 import numpy as np
 import ast

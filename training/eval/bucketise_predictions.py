@@ -8,7 +8,7 @@ utils.py). Fix it.
 
 import pandas as pd
 from pathlib import Path
-from utils import (
+from eval.eval_utils import (
     load_models_predictions,
     METRIC_2_MODEL_INCREMENTAL_PARTIAL,
 )
@@ -17,10 +17,10 @@ from bucketing import get_buckets_bounds_and_scaler, map_to_optimal_buckets
 HOME_DIR = "/mnt/ml-team/homes/grzegorz.jurdzinski"
 NEWSROOM_DIR = f"{HOME_DIR}/datasets/newsroom"
 # PREDS_DIR = f"{HOME_DIR}/runs/rewards/incremental/reward-deberta-large"
-PREDS_DIR = f"{HOME_DIR}/runs/newsroom-incremental/deberta-base"
+PREDS_DIR = f"{HOME_DIR}/runs/newsroom-incremental/deberta-base/B"
 METRICS = ("InformativenessRating",)  # "RelevanceRating")
 # INCREMENTAL_FILENAMES = [f"rewards_{i:02}" for i in range(11)]
-INCREMENTAL_FILENAMES = ["rewards_10"]
+INCREMENTAL_FILENAMES = ["rewards_01"]
 DATASET_FILE = f"{NEWSROOM_DIR}/newsroom-aggregated-sorted-order.csv"
 
 # d = {
