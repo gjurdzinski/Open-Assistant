@@ -12,7 +12,9 @@ re_reference_remove = re.compile(r"\[\d+(?:,\s*\d+)*?\]")
 
 
 def get_tokenizer(tokenizer_name, max_length, per_digit_tokens=False):
-    tokenizer = AutoTokenizer.from_pretrained(tokenizer_name, truncation=True, max_length=max_length)
+    tokenizer = AutoTokenizer.from_pretrained(
+        tokenizer_name, truncation=True, max_length=max_length
+    )
 
     if per_digit_tokens:
         tokenizer._tokenizer.pre_processor = pre_tokenizers.Digits(True)
@@ -86,9 +88,14 @@ def argument_parsing(parser):
         "output_dirs": ["output"],
         "auto_find_batch_size": False,
         "report_to": [],
+        "write_bucketised_predictions": False,
     }
-    args_without_none = {k: v for (k, v) in vars(args).items() if v is not None}
-    if not args_without_none["per_digit_tokens"]:  # Don't let missing command line override the conf
+    args_without_none = {
+        k: v for (k, v) in vars(args).items() if v is not None
+    }
+    if not args_without_none[
+        "per_digit_tokens"
+    ]:  # Don't let missing command line override the conf
         del args_without_none["per_digit_tokens"]
 
     # Apply default params, then yaml config, then command line args where specific (i.e. not None)
@@ -110,22 +117,32 @@ def argument_parsing(parser):
     return params
 
 
-def get_datasets(dataset_list: List[AnyStr], summeval_path=None, train_splits=[]):
+def get_datasets(
+    dataset_list: List[AnyStr], summeval_path=None, train_splits=[]
+):
     from rank_datasets import NewsroomDataset, SummevalDataset
     from torch.utils.data import ConcatDataset
 
     train_datasets, evals = [], {}
     for dataset_name in dataset_list:
         if "summeval_local" == dataset_name and summeval_path is not None:
-            train = SummevalDataset(dataset_path=summeval_path, splits=train_splits)
+            train = SummevalDataset(
+                dataset_path=summeval_path, splits=train_splits
+            )
             train_datasets.append(train)
-            eval = SummevalDataset(dataset_path=summeval_path, splits=["validation"])
+            eval = SummevalDataset(
+                dataset_path=summeval_path, splits=["validation"]
+            )
             evals["summeval_local"] = eval
         elif "newsroom_local" == dataset_name and summeval_path is not None:
-            train = NewsroomDataset(dataset_path=summeval_path, splits=train_splits)
+            train = NewsroomDataset(
+                dataset_path=summeval_path, splits=train_splits
+            )
             print(" >>>> read data from:", summeval_path)
             train_datasets.append(train)
-            eval = NewsroomDataset(dataset_path=summeval_path, splits=["valid"])
+            eval = NewsroomDataset(
+                dataset_path=summeval_path, splits=["valid"]
+            )
             evals["newsroom_local"] = eval
 
     train = ConcatDataset(train_datasets)

@@ -14,17 +14,10 @@ reward_model
 rewards
 runs
 
-# Generated files
-backend/oasst-openapi.json
-backend/openapi.json
-
 # ignore jupyter notebook checkpoints
 .ipynb_checkpoints
 
 *.log
 *.db
-# edit docs using obsidian.md, these files should not appear in the repo
-.obsidian/
+*.pkl
 .pytest_cache/
-
-/docker-compose.override.yml
